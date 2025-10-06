@@ -1,103 +1,90 @@
-import React, { useState, useMemo } from 'react';
-import './Dashboard.css';
+import React, { useState, useMemo } from "react";
+import "./Dashboard.css";
 
-// Constantes
-const STATS_DATA = [
-  { title: 'CANDIDATURAS', value: '347', change: '+12%', positive: true },
-  { title: 'VAGAS ABERTAS', value: '14', change: '+3 vagas', positive: true },
-  { title: 'TEMPO MÉDIO', value: '12 dias', change: '-40%', positive: true },
-  { title: 'QUALIFICADOS', value: '86%', change: '+8%', positive: true }
+const STATS = [
+  { title: "CANDIDATURAS", value: "347", change: "+12%", positive: true },
+  { title: "VAGAS ABERTAS", value: "14", change: "+3 vagas", positive: true },
+  { title: "TEMPO MÉDIO", value: "12 dias", change: "-40%", positive: true },
+  { title: "QUALIFICADOS", value: "86%", change: "+8%", positive: true },
 ];
 
-const CANDIDATES_DATA = [
+const CANDIDATES = [
   {
     id: 1,
-    initials: 'PM',
-    name: 'Paulo Mendes',
-    email: 'paulo@email.com',
-    position: 'Desenvolvedor Full-stack',
-    status: 'interview',
-    statusLabel: 'Entrevista',
-    date: 'Hoje, 14:30',
-    compatibility: 95
+    initials: "PM",
+    name: "Paulo Mendes",
+    email: "paulo@email.com",
+    position: "Desenvolvedor Full-stack",
+    status: "interview",
+    statusLabel: "Entrevista",
+    date: "Hoje, 14:30",
+    compatibility: 95,
   },
   {
     id: 2,
-    initials: 'CR',
-    name: 'Carla Ribeiro',
-    email: 'carla@email.com',
-    position: 'Product Manager',
-    status: 'screening',
-    statusLabel: 'Triagem',
-    date: 'Ontem, 10:15',
-    compatibility: 88
+    initials: "CR",
+    name: "Carla Ribeiro",
+    email: "carla@email.com",
+    position: "Product Manager",
+    status: "screening",
+    statusLabel: "Triagem",
+    date: "Ontem, 10:15",
+    compatibility: 88,
   },
   {
     id: 3,
-    initials: 'LS',
-    name: 'Lucas Silva',
-    email: 'lucas@email.com',
-    position: 'UX Designer',
-    status: 'new',
-    statusLabel: 'Novo',
-    date: '25 Abr, 2025',
-    compatibility: 78
+    initials: "LS",
+    name: "Lucas Silva",
+    email: "lucas@email.com",
+    position: "UX Designer",
+    status: "new",
+    statusLabel: "Novo",
+    date: "25 Abr, 2025",
+    compatibility: 78,
   },
   {
     id: 4,
-    initials: 'MF',
-    name: 'Maria Fernandes',
-    email: 'maria@email.com',
-    position: 'Desenvolvedor Frontend',
-    status: 'hired',
-    statusLabel: 'Contratado',
-    date: '20 Abr, 2025',
-    compatibility: 92
+    initials: "MF",
+    name: "Maria Fernandes",
+    email: "maria@email.com",
+    position: "Desenvolvedor Frontend",
+    status: "hired",
+    statusLabel: "Contratado",
+    date: "20 Abr, 2025",
+    compatibility: 92,
   },
   {
     id: 5,
-    initials: 'RS',
-    name: 'Roberto Santos',
-    email: 'roberto@email.com',
-    position: 'Product Manager',
-    status: 'rejected',
-    statusLabel: 'Rejeitado',
-    date: '18 Abr, 2025',
-    compatibility: 65
-  }
+    initials: "RS",
+    name: "Roberto Santos",
+    email: "roberto@email.com",
+    position: "Product Manager",
+    status: "rejected",
+    statusLabel: "Rejeitado",
+    date: "18 Abr, 2025",
+    compatibility: 65,
+  },
 ];
 
-// Componentes
 const StatCard = ({ title, value, change, positive }) => (
   <div className="stat-card">
-    <h3 className="stat-title">{title}</h3>
+    <h3>{title}</h3>
     <p className="stat-value">{value}</p>
-    <p className={`stat-change ${positive ? 'positive' : 'negative'}`}>
-      {change}
-    </p>
+    <p className={`stat-change ${positive ? "positive" : "negative"}`}>{change}</p>
   </div>
 );
 
-const CandidateAvatar = ({ initials }) => (
-  <div className="candidate-avatar">
-    {initials}
-  </div>
-);
+const CandidateAvatar = ({ initials }) => <div className="candidate-avatar">{initials}</div>;
 
 const StatusBadge = ({ status, label }) => (
-  <span className={`status-badge status-${status}`}>
-    {label}
-  </span>
+  <span className={`status-badge status-${status}`}>{label}</span>
 );
 
 const CompatibilityBar = ({ percentage }) => (
   <div className="compatibility-container">
     <p className="compatibility-percentage">{percentage}%</p>
     <div className="compatibility-bar">
-      <div
-        className="compatibility-fill"
-        style={{ width: `${percentage}%` }}
-      />
+      <div className="compatibility-fill" style={{ width: `${percentage}%` }} />
     </div>
   </div>
 );
@@ -106,67 +93,51 @@ const CandidateCard = ({ candidate, onView, onEdit, onMessage }) => (
   <div className="candidate-card">
     <div className="candidate-header">
       <CandidateAvatar initials={candidate.initials} />
-      <div className="candidate-info">
-        <h4 className="candidate-name">{candidate.name}</h4>
+      <div>
+        <h4>{candidate.name}</h4>
         <p className="candidate-email">{candidate.email}</p>
       </div>
     </div>
 
     <div className="candidate-details">
-      <div className="detail-item">
-        <p className="detail-label">Vaga</p>
-        <p className="detail-value">{candidate.position}</p>
-      </div>
-
-      <div className="detail-item">
-        <p className="detail-label">Status</p>
-        <StatusBadge status={candidate.status} label={candidate.statusLabel} />
-      </div>
-
-      <div className="detail-item">
-        <p className="detail-label">Data</p>
-        <p className="detail-value">{candidate.date}</p>
-      </div>
-
-      <div className="detail-item">
-        <p className="detail-label">Compatibilidade</p>
-        <CompatibilityBar percentage={candidate.compatibility} />
-      </div>
+      <Detail label="Vaga" value={candidate.position} />
+      <Detail
+        label="Status"
+        value={<StatusBadge status={candidate.status} label={candidate.statusLabel} />}
+      />
+      <Detail label="Data" value={candidate.date} />
+      <Detail
+        label="Compatibilidade"
+        value={<CompatibilityBar percentage={candidate.compatibility} />}
+      />
     </div>
 
     <div className="candidate-actions">
-      <button 
-        onClick={() => onView(candidate)}
-        className="btn btn-primary"
-        aria-label={`Visualizar ${candidate.name}`}
-      >
+      <button onClick={() => onView(candidate)} className="btn btn-primary">
         Visualizar
       </button>
-      <button 
-        onClick={() => onEdit(candidate)}
-        className="btn btn-secondary"
-        aria-label={`Editar ${candidate.name}`}
-      >
+      <button onClick={() => onEdit(candidate)} className="btn btn-secondary">
         Editar
       </button>
-      <button 
-        onClick={() => onMessage(candidate)}
-        className="btn btn-secondary"
-        aria-label={`Enviar mensagem para ${candidate.name}`}
-      >
+      <button onClick={() => onMessage(candidate)} className="btn btn-secondary">
         Enviar mensagem
       </button>
     </div>
   </div>
 );
 
+const Detail = ({ label, value }) => (
+  <div className="detail-item">
+    <p className="detail-label">{label}</p>
+    <p className="detail-value">{value}</p>
+  </div>
+);
+
 const EmptyState = () => (
   <div className="empty-state">
     <div className="empty-icon">🔍</div>
-    <h3 className="empty-title">Nenhum candidato encontrado</h3>
-    <p className="empty-text">
-      Tente ajustar os filtros ou buscar por outro termo
-    </p>
+    <h3>Nenhum candidato encontrado</h3>
+    <p>Tente ajustar os filtros ou buscar por outro termo</p>
   </div>
 );
 
@@ -178,8 +149,7 @@ const Header = () => (
       </h1>
       <div className="header-actions">
         <button className="notification-btn" aria-label="Notificações">
-          <span className="notification-icon">📬</span>
-          <span className="notification-badge">3</span>
+          📬<span className="notification-badge">3</span>
         </button>
         <div className="avatar">JD</div>
       </div>
@@ -187,82 +157,58 @@ const Header = () => (
   </header>
 );
 
-// Componente Principal
 export default function Dashboard() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterVacancy, setFilterVacancy] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [search, setSearch] = useState("");
+  const [vacancy, setVacancy] = useState("all");
+  const [status, setStatus] = useState("all");
 
-  const filteredCandidates = useMemo(() => {
-    return CANDIDATES_DATA.filter(candidate => {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = !searchTerm || 
-        candidate.name.toLowerCase().includes(searchLower) ||
-        candidate.email.toLowerCase().includes(searchLower);
-
-      const matchesVacancy = filterVacancy === 'all' || 
-        candidate.position.toLowerCase().includes(filterVacancy.toLowerCase());
-
-      const matchesStatus = filterStatus === 'all' || 
-        candidate.status === filterStatus;
-
+  const filtered = useMemo(() => {
+    const s = search.toLowerCase();
+    return CANDIDATES.filter((c) => {
+      const matchesSearch =
+        !search || c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s);
+      const matchesVacancy =
+        vacancy === "all" || c.position.toLowerCase().includes(vacancy.toLowerCase());
+      const matchesStatus = status === "all" || c.status === status;
       return matchesSearch && matchesVacancy && matchesStatus;
     });
-  }, [searchTerm, filterVacancy, filterStatus]);
+  }, [search, vacancy, status]);
 
-  const handleView = (candidate) => {
-    alert(`Visualizando:\n\nNome: ${candidate.name}\nEmail: ${candidate.email}\nVaga: ${candidate.position}\nCompatibilidade: ${candidate.compatibility}%`);
-  };
+  const handleView = (c) =>
+    alert(`Visualizando:\n\n${c.name}\n${c.email}\nVaga: ${c.position}\nCompatibilidade: ${c.compatibility}%`);
 
-  const handleEdit = (candidate) => {
-    alert(`Editando candidato: ${candidate.name}`);
-  };
-
-  const handleMessage = (candidate) => {
-    alert(`Enviando mensagem para:\n\n${candidate.name}\n${candidate.email}`);
-  };
+  const handleEdit = (c) => alert(`Editando candidato: ${c.name}`);
+  const handleMessage = (c) => alert(`Enviando mensagem para:\n\n${c.name}\n${c.email}`);
 
   return (
     <div className="dashboard">
       <Header />
 
       <main className="main-content">
-        <div className="page-header">
-          <h2 className="page-title">Dashboard</h2>
-          <p className="page-subtitle">Visão geral dos candidatos e vagas</p>
-        </div>
+        <header className="page-header">
+          <h2>Dashboard</h2>
+          <p>Visão geral dos candidatos e vagas</p>
+        </header>
 
-        <div className="stats-grid">
-          {STATS_DATA.map((stat, index) => (
-            <StatCard key={index} {...stat} />
+        <section className="stats-grid">
+          {STATS.map((s, i) => (
+            <StatCard key={i} {...s} />
           ))}
-        </div>
+        </section>
 
-        <div className="content-card">
+        <section className="content-card">
           <div className="content-header">
-            <div className="content-header-top">
-              <h3 className="content-title">Candidatos Recentes</h3>
-            </div>
-            
+            <h3>Candidatos Recentes</h3>
+
             <div className="filters-container">
-              <select
-                className="filter-select"
-                value={filterVacancy}
-                onChange={(e) => setFilterVacancy(e.target.value)}
-                aria-label="Filtrar por vaga"
-              >
+              <select value={vacancy} onChange={(e) => setVacancy(e.target.value)}>
                 <option value="all">Todas as vagas</option>
                 <option value="desenvolvedor">Desenvolvedor</option>
                 <option value="product">Product Manager</option>
                 <option value="designer">UX Designer</option>
               </select>
 
-              <select
-                className="filter-select"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                aria-label="Filtrar por status"
-              >
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
                 <option value="all">Todos os status</option>
                 <option value="new">Novo</option>
                 <option value="screening">Triagem</option>
@@ -277,31 +223,33 @@ export default function Dashboard() {
             <div className="search-container">
               <input
                 type="search"
-                className="search-input"
                 placeholder="Pesquisar por nome ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Pesquisar candidatos"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
-              <span className="search-icon" aria-hidden="true">🔍</span>
+              <span className="search-icon">🔍</span>
             </div>
 
             <div className="results-count">
-              {filteredCandidates.length === CANDIDATES_DATA.length ? (
-                <span>Mostrando <strong>todos os {CANDIDATES_DATA.length}</strong> candidatos</span>
+              {filtered.length === CANDIDATES.length ? (
+                <span>
+                  Mostrando <strong>todos os {CANDIDATES.length}</strong> candidatos
+                </span>
               ) : (
-                <span>Encontrados <strong>{filteredCandidates.length}</strong> de {CANDIDATES_DATA.length} candidatos</span>
+                <span>
+                  Encontrados <strong>{filtered.length}</strong> de {CANDIDATES.length} candidatos
+                </span>
               )}
             </div>
 
-            {filteredCandidates.length === 0 ? (
+            {filtered.length === 0 ? (
               <EmptyState />
             ) : (
               <div className="candidates-list">
-                {filteredCandidates.map((candidate) => (
+                {filtered.map((c) => (
                   <CandidateCard
-                    key={candidate.id}
-                    candidate={candidate}
+                    key={c.id}
+                    candidate={c}
                     onView={handleView}
                     onEdit={handleEdit}
                     onMessage={handleMessage}
@@ -310,7 +258,7 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );
