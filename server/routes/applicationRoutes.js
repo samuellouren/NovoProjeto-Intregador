@@ -1,0 +1,92 @@
+import express from 'express'
+import db from '../config/database.js'
+
+const router = express.Router()
+
+// Listar todas as aplicações
+router.get('/applications', (req, res) => {
+  try {
+    console.log('[v0] Buscando aplicações...')
+    const applications = db.prepare(`
+      SELECT 
+        a.*,
+        c.name as candidate_name,
+        c.email as candidate_email,
+        j.title as job_title,
+        j.company as job_company
+      FROM applications a
+      JOIN candidates c ON a.candidate_id = c.id
+      JOIN jobs j ON a.job_id = j.id
+      ORDER BY a.applied_at DESC
+    `).all()
+    res.json(applications)
+  } catch (error) {
+    console.error('[v0] Erro ao buscar aplicações:', error)
+    res.status(500).json({ message: 'Erro ao buscar aplicações' })
+  }
+})
+
+// Buscar aplicações de uma vaga específica
+router.get('/applications/job/:jobId', (req, res) => {
+  try {
+    const { jobId } = req.params
+    console.log('[v0] Buscando aplicações da vaga:', jobId)
+    
+    const applications = db.prepare(`
+      SELECT 
+        a.*,
+        c.name as candidate_name,
+        c.email as candidate_email,
+        c.phone as candidate_phone,
+        c.skills as candidate_skills
+      FROM applications a
+      JOIN candidates c ON a.candidate_id = c.id
+      WHERE a.job_id = ?
+      ORDER BY a.applied_at DESC
+    `).all(jobId)
+    
+    res.json(applications)
+  } catch (error) {
+    console.error('[v0] Erro ao buscar aplicações:', error)
+    res.status(500).json({ message: 'Erro ao buscar aplicações' })
+  }
+})
+
+// Adicionar candidato a uma vaga
+router.post('/applications', (req, res) => {
+  try {
+    const { candidate_id, job_id } = req.body
+
+    if (!candidate_id || !job_id) {
+      return res.status(400).json({ 
+        message: 'ID do candidato e da vaga são obrigatórios' 
+      })
+    }
+
+    console.log('[v0] Adicionando candidato', candidate_id, 'à vaga', job_id)
+
+    const stmt = db.prepare(`
+      INSERT INTO applications (candidate_id, job_id)
+      VALUES (?, ?)
+    `)
+    
+    const result = stmt.run(candidate_id, job_id)
+    
+    res.status(201).json({ 
+      message: 'Candidato adicionado à vaga com sucesso',
+      id: result.lastInsertRowid 
+    })
+  } catch (error) {
+    console.error('[v0] Erro ao adicionar aplicação:', error)
+    
+    if (error.message.includes('UNIQUE')) {
+      return res.status(400).json({ 
+        message: 'Candidato já foi adicionado a esta vaga' 
+      })
+    }
+    
+    res.status(500).json({ message: 'Erro ao adicionar candidato à vaga' })
+  }
+})
+
+export default router
