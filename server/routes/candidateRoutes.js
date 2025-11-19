@@ -3,12 +3,71 @@ import db from '../config/database.js'
 
 const router = express.Router()
 
-// Listar todos os candidatos
+function calculateCompatibility(candidateSkills, jobKeywords) {
+  if (!candidateSkills || !jobKeywords) return 0
+  
+  const skills = candidateSkills.toLowerCase().split(',').map(s => s.trim())
+  const keywords = jobKeywords.toLowerCase().split(',').map(k => k.trim())
+  
+  if (keywords.length === 0) return 0
+  
+  let matches = 0
+  keywords.forEach(keyword => {
+    if (skills.some(skill => skill.includes(keyword) || keyword.includes(skill))) {
+      matches++
+    }
+  })
+  
+  return Math.round((matches / keywords.length) * 100)
+}
+
+// Listar todos os candidatos com contagem de aplicações e compatibilidade média
 router.get('/candidates', (req, res) => {
   try {
-    console.log('[v0] Buscando candidatos...')
-    const candidates = db.prepare('SELECT * FROM candidates ORDER BY created_at DESC').all()
-    res.json(candidates)
+    console.log('[v0] Buscando candidatos com compatibilidade...')
+    
+    const candidates = db.prepare(`
+      SELECT 
+        c.*,
+        COUNT(a.id) as applications_count
+      FROM candidates c
+      LEFT JOIN applications a ON c.id = a.candidate_id
+      GROUP BY c.id
+      ORDER BY c.created_at DESC
+    `).all()
+    
+    const candidatesWithCompatibility = candidates.map(candidate => {
+      const applications = db.prepare(`
+        SELECT 
+          j.*,
+          a.status,
+          a.applied_at,
+          a.compatibility,
+          a.job_id
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.id
+        WHERE a.candidate_id = ?
+        ORDER BY a.applied_at DESC
+      `).all(candidate.id)
+      
+      let avgCompatibility = 0
+      if (applications.length > 0) {
+        const total = applications.reduce((sum, app) => {
+          const comp = app.compatibility || calculateCompatibility(candidate.skills, app.keywords)
+          return sum + comp
+        }, 0)
+        avgCompatibility = Math.round(total / applications.length)
+      }
+      
+      return {
+        ...candidate,
+        avg_compatibility: avgCompatibility,
+        applications: applications
+      }
+    })
+    
+    console.log('[v0] Candidatos encontrados:', candidatesWithCompatibility.length)
+    res.json(candidatesWithCompatibility)
   } catch (error) {
     console.error('[v0] Erro ao buscar candidatos:', error)
     res.status(500).json({ message: 'Erro ao buscar candidatos' })
@@ -18,7 +77,7 @@ router.get('/candidates', (req, res) => {
 // Adicionar novo candidato
 router.post('/candidates', (req, res) => {
   try {
-    const { name, email, phone, skills, experience, education } = req.body
+    const { name, email, phone, skills, experience, education, status = 'novo' } = req.body
 
     // Validação básica
     if (!name || !email) {
@@ -29,11 +88,11 @@ router.post('/candidates', (req, res) => {
 
     // Insere candidato no banco
     const stmt = db.prepare(`
-      INSERT INTO candidates (name, email, phone, skills, experience, education)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO candidates (name, email, phone, skills, experience, education, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `)
     
-    const result = stmt.run(name, email, phone, skills, experience, education)
+    const result = stmt.run(name, email, phone, skills, experience, education, status)
     
     res.status(201).json({ 
       message: 'Candidato adicionado com sucesso',
@@ -55,7 +114,7 @@ router.post('/candidates', (req, res) => {
 router.put('/candidates/:id', (req, res) => {
   try {
     const { id } = req.params
-    const { name, email, phone, skills, experience, education } = req.body
+    const { name, email, phone, skills, experience, education, status } = req.body
 
     // Validação básica
     if (!name || !email) {
@@ -67,11 +126,11 @@ router.put('/candidates/:id', (req, res) => {
     // Atualiza candidato no banco
     const stmt = db.prepare(`
       UPDATE candidates 
-      SET name = ?, email = ?, phone = ?, skills = ?, experience = ?, education = ?
+      SET name = ?, email = ?, phone = ?, skills = ?, experience = ?, education = ?, status = ?
       WHERE id = ?
     `)
     
-    const result = stmt.run(name, email, phone, skills, experience, education, id)
+    const result = stmt.run(name, email, phone, skills, experience, education, status, id)
     
     if (result.changes === 0) {
       return res.status(404).json({ message: 'Candidato não encontrado' })
@@ -86,6 +145,60 @@ router.put('/candidates/:id', (req, res) => {
     }
     
     res.status(500).json({ message: 'Erro ao atualizar candidato' })
+  }
+})
+
+// Atualizar status do candidato com validação de limite de candidatos contratados
+router.put('/candidates/:id/status', (req, res) => {
+  try {
+    const { id } = req.params
+    const { status } = req.body
+
+    const validStatuses = ['novo', 'entrevista', 'contratado', 'recusado']
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        message: 'Status inválido. Use: novo, entrevista, contratado ou recusado' 
+      })
+    }
+
+    if (status === 'contratado') {
+      const candidateApplications = db.prepare(`
+        SELECT DISTINCT a.job_id
+        FROM applications a
+        WHERE a.candidate_id = ?
+      `).all(id)
+
+      for (const app of candidateApplications) {
+        const job = db.prepare('SELECT max_candidates FROM jobs WHERE id = ?').get(app.job_id)
+        const hiredCount = db.prepare(`
+          SELECT COUNT(*) as count
+          FROM applications a
+          JOIN candidates c ON a.candidate_id = c.id
+          WHERE a.job_id = ? AND c.status = 'contratado'
+        `).get(app.job_id)
+
+        if (job && hiredCount.count >= job.max_candidates) {
+          return res.status(400).json({
+            message: `Limite de candidatos contratados para esta vaga foi atingido (${job.max_candidates} máximo)`
+          })
+        }
+      }
+    }
+
+    console.log('[v0] Atualizando status do candidato:', id, 'para', status)
+
+    const stmt = db.prepare(`
+      UPDATE candidates 
+      SET status = ?
+      WHERE id = ?
+    `)
+    
+    stmt.run(status, id)
+    
+    res.json({ message: 'Status atualizado com sucesso' })
+  } catch (error) {
+    console.error('[v0] Erro ao atualizar status:', error)
+    res.status(500).json({ message: 'Erro ao atualizar status' })
   }
 })
 
@@ -125,19 +238,25 @@ router.get('/candidates/:id', (req, res) => {
       return res.status(404).json({ message: 'Candidato não encontrado' })
     }
     
-    // Buscar vagas que o candidato se aplicou
     const applications = db.prepare(`
       SELECT 
         j.*,
         a.status,
-        a.applied_at
+        a.applied_at,
+        a.compatibility,
+        a.job_id
       FROM applications a
       JOIN jobs j ON a.job_id = j.id
       WHERE a.candidate_id = ?
       ORDER BY a.applied_at DESC
     `).all(id)
     
-    res.json({ ...candidate, applications })
+    const applicationsWithCompatibility = applications.map(app => ({
+      ...app,
+      compatibility: app.compatibility || calculateCompatibility(candidate.skills, app.keywords)
+    }))
+    
+    res.json({ ...candidate, applications: applicationsWithCompatibility })
   } catch (error) {
     console.error('[v0] Erro ao buscar candidato:', error)
     res.status(500).json({ message: 'Erro ao buscar candidato' })
@@ -169,6 +288,40 @@ router.post('/candidates/:candidateId/apply/:jobId', (req, res) => {
     }
     
     res.status(500).json({ message: 'Erro ao candidatar à vaga' })
+  }
+})
+
+// Listar candidatos de uma vaga específica com informações completas
+router.get('/applications/job/:jobId', (req, res) => {
+  try {
+    const { jobId } = req.params
+    console.log('[v0] Buscando candidatos da vaga:', jobId)
+    
+    const applications = db.prepare(`
+      SELECT 
+        a.id,
+        a.candidate_id,
+        a.job_id,
+        a.status,
+        a.applied_at,
+        a.compatibility,
+        c.name as candidateName,
+        c.email as candidateEmail,
+        c.phone as candidatePhone,
+        c.skills,
+        c.experience,
+        c.education
+      FROM applications a
+      JOIN candidates c ON a.candidate_id = c.id
+      WHERE a.job_id = ?
+      ORDER BY a.compatibility DESC, a.applied_at DESC
+    `).all(jobId)
+    
+    console.log('[v0] Candidatos encontrados para vaga:', applications.length)
+    res.json(applications)
+  } catch (error) {
+    console.error('[v0] Erro ao buscar candidatos da vaga:', error)
+    res.status(500).json({ message: 'Erro ao buscar candidatos da vaga' })
   }
 })
 

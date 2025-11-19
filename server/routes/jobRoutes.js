@@ -8,7 +8,22 @@ router.get('/jobs', (req, res) => {
   try {
     console.log('[v0] Buscando vagas...')
     const jobs = db.prepare('SELECT * FROM jobs ORDER BY created_at DESC').all()
-    res.json(jobs)
+    
+    const jobsWithCounts = jobs.map(job => {
+      const candidateCount = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM applications a
+        JOIN candidates c ON a.candidate_id = c.id
+        WHERE a.job_id = ? AND c.status = 'contratado'
+      `).get(job.id)
+      
+      return {
+        ...job,
+        currentCandidatesCount: candidateCount.count || 0
+      }
+    })
+    
+    res.json(jobsWithCounts)
   } catch (error) {
     console.error('[v0] Erro ao buscar vagas:', error)
     res.status(500).json({ message: 'Erro ao buscar vagas' })
@@ -18,7 +33,7 @@ router.get('/jobs', (req, res) => {
 // Adicionar nova vaga
 router.post('/jobs', (req, res) => {
   try {
-    const { title, company, location, type, salary, description, requirements } = req.body
+    const { title, company, location, type, salary, description, requirements, keywords, max_candidates } = req.body
 
     // Validação básica
     if (!title || !company || !location || !description) {
@@ -29,26 +44,32 @@ router.post('/jobs', (req, res) => {
 
     console.log('[v0] Adicionando vaga:', title)
 
-    // Insere vaga no banco
-    const stmt = db.prepare(`
-      INSERT INTO jobs (title, company, location, type, salary, description, requirements)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `)
-    
-    const result = stmt.run(
-      title, 
-      company, 
-      location, 
-      type, 
-      salary, 
-      description, 
-      requirements
-    )
-    
-    res.status(201).json({ 
-      message: 'Vaga adicionada com sucesso',
-      id: result.lastInsertRowid 
-    })
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO jobs (title, company, location, type, salary, description, requirements, keywords, max_candidates)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+      
+      const result = stmt.run(
+        title, 
+        company, 
+        location, 
+        type || null, 
+        salary || null, 
+        description, 
+        requirements || null,
+        keywords || null,
+        max_candidates ? parseInt(max_candidates) : 10
+      )
+      
+      res.status(201).json({ 
+        message: 'Vaga adicionada com sucesso',
+        id: result.lastInsertRowid 
+      })
+    } catch (dbError) {
+      console.error('[v0] Erro no banco ao adicionar vaga:', dbError.message)
+      res.status(500).json({ message: 'Erro ao adicionar vaga: ' + dbError.message })
+    }
   } catch (error) {
     console.error('[v0] Erro ao adicionar vaga:', error)
     res.status(500).json({ message: 'Erro ao adicionar vaga' })
@@ -59,7 +80,7 @@ router.post('/jobs', (req, res) => {
 router.put('/jobs/:id', (req, res) => {
   try {
     const { id } = req.params
-    const { title, company, location, type, salary, description, requirements } = req.body
+    const { title, company, location, type, salary, description, requirements, keywords, max_candidates } = req.body
 
     // Validação básica
     if (!title || !company || !location || !description) {
@@ -70,10 +91,9 @@ router.put('/jobs/:id', (req, res) => {
 
     console.log('[v0] Atualizando vaga:', id)
 
-    // Atualiza vaga no banco
     const stmt = db.prepare(`
       UPDATE jobs 
-      SET title = ?, company = ?, location = ?, type = ?, salary = ?, description = ?, requirements = ?
+      SET title = ?, company = ?, location = ?, type = ?, salary = ?, description = ?, requirements = ?, keywords = ?, max_candidates = ?
       WHERE id = ?
     `)
     
@@ -85,6 +105,8 @@ router.put('/jobs/:id', (req, res) => {
       salary, 
       description, 
       requirements,
+      keywords,
+      max_candidates || 10,
       id
     )
     

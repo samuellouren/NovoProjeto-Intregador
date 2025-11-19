@@ -12,6 +12,7 @@ router.get('/applications', (req, res) => {
         a.*,
         c.name as candidate_name,
         c.email as candidate_email,
+        c.status as candidate_status,
         j.title as job_title,
         j.company as job_company
       FROM applications a
@@ -38,7 +39,8 @@ router.get('/applications/job/:jobId', (req, res) => {
         c.name as candidate_name,
         c.email as candidate_email,
         c.phone as candidate_phone,
-        c.skills as candidate_skills
+        c.skills as candidate_skills,
+        c.status as candidate_status
       FROM applications a
       JOIN candidates c ON a.candidate_id = c.id
       WHERE a.job_id = ?
@@ -55,7 +57,7 @@ router.get('/applications/job/:jobId', (req, res) => {
 // Adicionar candidato a uma vaga
 router.post('/applications', (req, res) => {
   try {
-    const { candidate_id, job_id } = req.body
+    const { candidate_id, job_id, compatibility = 0 } = req.body
 
     if (!candidate_id || !job_id) {
       return res.status(400).json({ 
@@ -63,14 +65,14 @@ router.post('/applications', (req, res) => {
       })
     }
 
-    console.log('[v0] Adicionando candidato', candidate_id, 'à vaga', job_id)
+    console.log('[v0] Adicionando candidato', candidate_id, 'à vaga', job_id, 'com compatibilidade', compatibility)
 
     const stmt = db.prepare(`
-      INSERT INTO applications (candidate_id, job_id)
-      VALUES (?, ?)
+      INSERT INTO applications (candidate_id, job_id, compatibility)
+      VALUES (?, ?, ?)
     `)
     
-    const result = stmt.run(candidate_id, job_id)
+    const result = stmt.run(candidate_id, job_id, compatibility)
     
     res.status(201).json({ 
       message: 'Candidato adicionado à vaga com sucesso',
@@ -86,6 +88,34 @@ router.post('/applications', (req, res) => {
     }
     
     res.status(500).json({ message: 'Erro ao adicionar candidato à vaga' })
+  }
+})
+
+router.put('/applications/:id/compatibility', (req, res) => {
+  try {
+    const { id } = req.params
+    const { compatibility } = req.body
+
+    if (compatibility === undefined || compatibility < 0 || compatibility > 100) {
+      return res.status(400).json({ 
+        message: 'Compatibilidade deve ser um número entre 0 e 100' 
+      })
+    }
+
+    console.log('[v0] Atualizando compatibilidade da aplicação:', id)
+
+    const stmt = db.prepare(`
+      UPDATE applications 
+      SET compatibility = ?
+      WHERE id = ?
+    `)
+    
+    stmt.run(compatibility, id)
+    
+    res.json({ message: 'Compatibilidade atualizada com sucesso' })
+  } catch (error) {
+    console.error('[v0] Erro ao atualizar compatibilidade:', error)
+    res.status(500).json({ message: 'Erro ao atualizar compatibilidade' })
   }
 })
 
