@@ -36,6 +36,12 @@ export default function Header() {
           >
             Vagas
           </button>
+          <button 
+            onClick={() => navigate('/settings')}
+            className={`nav-link ${isActive('/settings')}`}
+          >
+            Configurações
+          </button>
         </nav>
 
         <div className="header-actions">

@@ -6,6 +6,7 @@ import Candidates from './pages/Candidates'
 import AddCandidate from './pages/AddCandidate'
 import AddJob from './pages/AddJob'
 import Jobs from './pages/Jobs'
+import Settings from './pages/Settings'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth()
@@ -48,6 +49,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AddJob />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

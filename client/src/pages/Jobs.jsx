@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Header from '../components/Header'
 import JobDetailsModal from '../components/JobDetailsModal'
-import AddCandidateToJobModal from '../components/AddCandidateToJobModal'
 import EditJobModal from '../components/EditJobModal'
 import './Jobs.css'
 
@@ -13,8 +12,9 @@ export default function Jobs() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedJob, setSelectedJob] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showAddCandidateModal, setShowAddCandidateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showCandidatesModal, setShowCandidatesModal] = useState(false)
+  const [jobCandidates, setJobCandidates] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -56,9 +56,17 @@ export default function Jobs() {
     }
   }
 
-  const handleAddCandidateToJob = (job) => {
-    setSelectedJob(job)
-    setShowAddCandidateModal(true)
+  const handleViewCandidates = async (job) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/applications/job/${job.id}`)
+      console.log('[v0] Candidatos da vaga:', response.data)
+      setJobCandidates(response.data)
+      setSelectedJob(job)
+      setShowCandidatesModal(true)
+    } catch (error) {
+      console.error('[v0] Erro ao buscar candidatos:', error)
+      alert('Erro ao buscar candidatos da vaga')
+    }
   }
 
   const handleEdit = (job) => {
@@ -126,10 +134,10 @@ export default function Jobs() {
                     Detalhes
                   </button>
                   <button 
-                    className="btn-add-candidate"
-                    onClick={() => handleAddCandidateToJob(job)}
+                    className="btn-candidates"
+                    onClick={() => handleViewCandidates(job)}
                   >
-                    + Candidato
+                    Ver Candidatos
                   </button>
                   <button 
                     className="btn-edit"
@@ -166,17 +174,6 @@ export default function Jobs() {
         />
       )}
 
-      {showAddCandidateModal && (
-        <AddCandidateToJobModal 
-          job={selectedJob} 
-          onClose={() => setShowAddCandidateModal(false)}
-          onSuccess={() => {
-            setShowAddCandidateModal(false)
-            fetchJobs()
-          }}
-        />
-      )}
-
       {showEditModal && (
         <EditJobModal 
           job={selectedJob} 
@@ -186,6 +183,43 @@ export default function Jobs() {
             fetchJobs()
           }}
         />
+      )}
+
+      {showCandidatesModal && (
+        <div className="modal-overlay" onClick={() => setShowCandidatesModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Candidatos - {selectedJob?.title}</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setShowCandidatesModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="candidates-list">
+              {jobCandidates.length === 0 ? (
+                <p className="no-candidates">Nenhum candidato para esta vaga</p>
+              ) : (
+                jobCandidates.map((application) => (
+                  <div key={application.id} className="candidate-item">
+                    <div className="candidate-info">
+                      <h4>{application.candidateName}</h4>
+                      <p className="candidate-email">{application.candidateEmail}</p>
+                      <p className="candidate-phone">{application.candidatePhone}</p>
+                    </div>
+                    <div className="compatibility-badge">
+                      <span className={`compatibility-score compatibility-${Math.round(application.compatibility / 25)}`}>
+                        {Math.round(application.compatibility)}%
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

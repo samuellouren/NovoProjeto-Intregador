@@ -14,17 +14,43 @@ export default function AddJob() {
     type: 'Tempo Integral',
     salary: '',
     description: '',
-    requirements: ''
+    requirements: '',
+    keywords: '',
+    max_candidates: 10  // Adicionar campo de limite de candidatos
   })
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [keywordsList, setKeywordsList] = useState([])
+  const [currentKeyword, setCurrentKeyword] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }))
+  }
+
+  const handleAddKeyword = (e) => {
+    e.preventDefault()
+    if (currentKeyword.trim()) {
+      const newKeywords = [...keywordsList, currentKeyword.trim()]
+      setKeywordsList(newKeywords)
+      setFormData(prev => ({
+        ...prev,
+        keywords: newKeywords.join(', ')
+      }))
+      setCurrentKeyword('')
+    }
+  }
+
+  const handleRemoveKeyword = (keywordToRemove) => {
+    const newKeywords = keywordsList.filter(kw => kw !== keywordToRemove)
+    setKeywordsList(newKeywords)
+    setFormData(prev => ({
+      ...prev,
+      keywords: newKeywords.join(', ')
     }))
   }
 
@@ -116,6 +142,21 @@ export default function AddJob() {
                   <option value="Remoto">Remoto</option>
                 </select>
               </div>
+
+              <div className="form-group">
+                <label htmlFor="max_candidates">Limite de Candidatos *</label>
+                <input
+                  type="number"
+                  id="max_candidates"
+                  name="max_candidates"
+                  value={formData.max_candidates}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  max="100"
+                  placeholder="Ex: 10"
+                />
+              </div>
             </div>
 
             <div className="form-group">
@@ -153,6 +194,50 @@ export default function AddJob() {
                 rows="4"
                 placeholder="Liste os requisitos necessários para a vaga"
               />
+            </div>
+
+            <div className="form-group">
+              <label>Palavras-Chave / Competências Desejadas *</label>
+              <div className="skills-input-wrapper">
+                <input
+                  type="text"
+                  value={currentKeyword}
+                  onChange={(e) => setCurrentKeyword(e.target.value)}
+                  placeholder="Digite uma competência (ex: React, Liderança)"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddKeyword(e)
+                    }
+                  }}
+                />
+                <button 
+                  type="button" 
+                  onClick={handleAddKeyword}
+                  className="btn-add-skill"
+                >
+                  + Adicionar
+                </button>
+              </div>
+              
+              {keywordsList.length > 0 && (
+                <div className="skills-list">
+                  {keywordsList.map((keyword, index) => (
+                    <div key={index} className="skill-tag">
+                      <span>{keyword}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveKeyword(keyword)}
+                        className="btn-remove-skill"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <small className="form-hint">
+                Adicione as competências necessárias para calcular a compatibilidade com candidatos
+              </small>
             </div>
 
             <div className="form-actions">

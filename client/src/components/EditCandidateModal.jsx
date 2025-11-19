@@ -9,7 +9,8 @@ export default function EditCandidateModal({ candidate, onClose, onSuccess }) {
     phone: candidate.phone || '',
     skills: candidate.skills || '',
     experience: candidate.experience || '',
-    education: candidate.education || ''
+    education: candidate.education || '',
+    status: candidate.status || 'novo'
   })
   const [loading, setLoading] = useState(false)
 
@@ -24,7 +25,36 @@ export default function EditCandidateModal({ candidate, onClose, onSuccess }) {
     setLoading(true)
 
     try {
-      await axios.put(`http://localhost:3000/api/candidates/${candidate.id}`, formData)
+      // Se o status mudou, usar endpoint específico com validação de limite
+      if (formData.status !== candidate.status) {
+        // Primeiro atualizar outros campos
+        if (formData.name !== candidate.name || 
+            formData.email !== candidate.email || 
+            formData.phone !== candidate.phone || 
+            formData.skills !== candidate.skills || 
+            formData.experience !== candidate.experience || 
+            formData.education !== candidate.education) {
+          
+          await axios.put(`http://localhost:3000/api/candidates/${candidate.id}`, {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            skills: formData.skills,
+            experience: formData.experience,
+            education: formData.education,
+            status: candidate.status // manter status anterior
+          })
+        }
+
+        // Depois atualizar status com validação
+        await axios.put(`http://localhost:3000/api/candidates/${candidate.id}/status`, {
+          status: formData.status
+        })
+      } else {
+        // Se status não mudou, atualizar normalmente
+        await axios.put(`http://localhost:3000/api/candidates/${candidate.id}`, formData)
+      }
+
       alert('Candidato atualizado com sucesso!')
       onSuccess()
     } catch (error) {
@@ -71,6 +101,20 @@ export default function EditCandidateModal({ candidate, onClose, onSuccess }) {
               value={formData.phone}
               onChange={(e) => setFormData({...formData, phone: e.target.value})}
             />
+          </div>
+
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({...formData, status: e.target.value})}
+              className="form-select"
+            >
+              <option value="novo">Novo</option>
+              <option value="entrevista">Entrevista</option>
+              <option value="contratado">Contratado</option>
+              <option value="recusado">Recusado</option>
+            </select>
           </div>
 
           <div className="form-group">

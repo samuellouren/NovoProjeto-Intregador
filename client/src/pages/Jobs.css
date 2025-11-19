@@ -157,7 +157,7 @@
 
 .job-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr); /* Updated to 4 columns */
   gap: 8px;
   width: 100%;
 }
@@ -223,6 +223,26 @@
   transform: translateY(-2px);
 }
 
+/* Adicionando estilo para botão Ver Candidatos */
+.btn-candidates {
+  padding: 10px 12px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.btn-candidates:hover {
+  background: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
 .no-results {
   text-align: center;
   padding: 60px 20px;
@@ -254,6 +274,158 @@
   box-shadow: 0 8px 24px rgba(168, 85, 247, 0.4);
 }
 
+/* Adicionando estilos para modal de candidatos */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: rgba(48, 43, 99, 0.95);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  backdrop-filter: blur(10px);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.modal-header h2 {
+  color: white;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.no-candidates {
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 20px;
+}
+
+.candidate-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.candidate-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.candidate-info {
+  flex: 1;
+}
+
+.candidate-info h4 {
+  color: white;
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+}
+
+.candidate-email {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.candidate-phone {
+  color: rgba(255, 255, 255, 0.5);
+  margin: 4px 0;
+  font-size: 0.85rem;
+}
+
+.compatibility-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+}
+
+.compatibility-score {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.compatibility-score.compatibility-0 {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.compatibility-score.compatibility-1 {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.compatibility-score.compatibility-2 {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.compatibility-score.compatibility-3 {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.compatibility-score.compatibility-4 {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
 @media (max-width: 768px) {
   .jobs-main {
     padding: 20px;
@@ -274,11 +446,11 @@
   }
 
   .job-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr; /* Updated for responsive layout */
   }
 
   .btn-details,
-  .btn-add-candidate,
+  .btn-candidates, /* Added to existing selector */
   .btn-edit,
   .btn-delete {
     width: 100%;
@@ -290,5 +462,22 @@
 
   .salary {
     text-align: center;
+  }
+
+  /* Media query styles for modal */
+  .modal-content {
+    max-height: 90vh;
+    padding: 20px;
+  }
+
+  .candidate-item {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .compatibility-badge {
+    min-width: auto;
+    width: 100%;
+    justify-content: center;
   }
 }

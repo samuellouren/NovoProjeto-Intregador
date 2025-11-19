@@ -75,6 +75,8 @@
   color: white;
   font-size: 16px;
   transition: all 0.3s ease;
+  /* Adicionado margin-bottom para separar dos filtros */
+  margin-bottom: 20px;
 }
 
 .search-input:focus {
@@ -85,6 +87,54 @@
 
 .search-input::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+/* Adicionados estilos para seção de filtros */
+.filters-section {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.filter-select {
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.filter-select:hover {
+  border-color: #a855f7;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+}
+
+.filter-select option {
+  background: #1f2937;
+  color: white;
 }
 
 .candidates-grid {
@@ -104,6 +154,7 @@
   display: flex;
   flex-direction: column;
   min-height: 280px;
+  position: relative; /* Adicionado para posicionamento absoluto do badge */
 }
 
 .candidate-card:hover {
@@ -111,9 +162,10 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
+/* Ajustado card-header sem o botão de favorito */
 .card-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 16px;
 }
@@ -131,22 +183,7 @@
   font-weight: bold;
 }
 
-.favorite-button {
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.favorite-button.active {
-  color: #fbbf24;
-}
-
-.favorite-button:hover {
-  transform: scale(1.2);
-}
+/* Removidos estilos do botão de favorito */
 
 .candidate-card h3 {
   color: white;
@@ -162,6 +199,72 @@
 .candidate-card .date {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.9rem;
+}
+
+/* Estilos para badge de status */
+/* Melhorando visibilidade do badge de status */
+.status-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Estilos para seletor de status */
+/* Removidos estilos do seletor de status */
+
+/* Adicionando estilos para informação de vagas aplicadas */
+.applications-info {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.applications-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Adicionando estilos para compatibilidade */
+.compatibility-info {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.compatibility-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.applications-count {
+  padding: 4px 10px;
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .no-results {
@@ -297,6 +400,15 @@
   }
 
   .btn-add {
+    width: 100%;
+  }
+
+  /* Adicionado responsivo para filtros */
+  .filters-section {
+    flex-direction: column;
+  }
+
+  .filter-select {
     width: 100%;
   }
 }

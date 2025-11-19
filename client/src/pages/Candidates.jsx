@@ -10,8 +10,10 @@ import EditCandidateModal from '../components/EditCandidateModal'
 export default function Candidates() {
   const [candidates, setCandidates] = useState([])
   const [filteredCandidates, setFilteredCandidates] = useState([])
+  const [jobs, setJobs] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [favorites, setFavorites] = useState(new Set())
+  const [statusFilter, setStatusFilter] = useState('todos')
+  const [jobsFilter, setJobsFilter] = useState('todos')
   const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -19,19 +21,35 @@ export default function Candidates() {
 
   useEffect(() => {
     fetchCandidates()
+    fetchJobs()
   }, [])
 
   useEffect(() => {
-    const filtered = candidates.filter(candidate =>
+    let filtered = candidates.filter(candidate =>
       candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       candidate.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(candidate => 
+        (candidate.status || 'novo') === statusFilter
+      )
+    }
+
+    if (jobsFilter !== 'todos') {
+      filtered = filtered.filter(candidate => {
+        return candidate.applications && candidate.applications.some(app => app.job_id === parseInt(jobsFilter))
+      })
+    }
+
     setFilteredCandidates(filtered)
-  }, [searchTerm, candidates])
+  }, [searchTerm, statusFilter, jobsFilter, candidates])
 
   const fetchCandidates = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/candidates')
+      console.log('[v0] Candidatos carregados:', response.data)
       setCandidates(response.data)
       setFilteredCandidates(response.data)
     } catch (error) {
@@ -40,20 +58,18 @@ export default function Candidates() {
     }
   }
 
-  const handleAddCandidate = () => {
-    navigate('/add-candidate')
+  const fetchJobs = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/jobs')
+      console.log('[v0] Vagas carregadas:', response.data)
+      setJobs(response.data)
+    } catch (error) {
+      console.error('Erro ao buscar vagas:', error)
+    }
   }
 
-  const toggleFavorite = (id) => {
-    setFavorites(prev => {
-      const newFavorites = new Set(prev)
-      if (newFavorites.has(id)) {
-        newFavorites.delete(id)
-      } else {
-        newFavorites.add(id)
-      }
-      return newFavorites
-    })
+  const handleAddCandidate = () => {
+    navigate('/add-candidate')
   }
 
   const handleViewDetails = async (candidate) => {
@@ -87,6 +103,33 @@ export default function Candidates() {
     }
   }
 
+  const getStatusColor = (status) => {
+    const colors = {
+      'novo': '#6366f1',
+      'entrevista': '#f59e0b',
+      'contratado': '#10b981',
+      'recusado': '#ef4444'
+    }
+    return colors[status] || '#6366f1'
+  }
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      'novo': 'Novo',
+      'entrevista': 'Entrevista',
+      'contratado': 'Contratado',
+      'recusado': 'Recusado'
+    }
+    return labels[status] || 'Novo'
+  }
+
+  const getCompatibilityColor = (compatibility) => {
+    if (compatibility >= 75) return '#10b981' // Verde
+    if (compatibility >= 50) return '#f59e0b' // Amarelo
+    if (compatibility >= 25) return '#ef4444' // Vermelho
+    return '#6b7280' // Cinza
+  }
+
   return (
     <div className="candidates-container">
       <Header />
@@ -107,24 +150,73 @@ export default function Candidates() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
+
+          <div className="filters-section">
+            <div className="filter-group">
+              <label>Filtrar por Status:</label>
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="todos">Todos os Status</option>
+                <option value="novo">Novo</option>
+                <option value="entrevista">Entrevista</option>
+                <option value="contratado">Contratado</option>
+                <option value="recusado">Recusado</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label>Filtrar por Vaga:</label>
+              <select 
+                value={jobsFilter}
+                onChange={(e) => setJobsFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="todos">Todas as Vagas</option>
+                {jobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title} - {job.company}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="candidates-grid">
           {filteredCandidates.map((candidate) => (
             <div key={candidate.id} className="candidate-card">
+              <div 
+                className="status-badge" 
+                style={{ backgroundColor: getStatusColor(candidate.status || 'novo') }}
+              >
+                {getStatusLabel(candidate.status || 'novo')}
+              </div>
+
               <div className="card-header">
                 <div className="avatar">
                   {candidate.name.charAt(0).toUpperCase()}
                 </div>
-                <button
-                  onClick={() => toggleFavorite(candidate.id)}
-                  className={`favorite-button ${favorites.has(candidate.id) ? 'active' : ''}`}
-                >
-                  {favorites.has(candidate.id) ? '★' : '☆'}
-                </button>
               </div>
               <h3>{candidate.name}</h3>
               <p className="email">{candidate.email}</p>
+              
+              {candidate.applications_count > 0 && (
+                <div className="compatibility-info">
+                  <span 
+                    className="compatibility-badge"
+                    style={{ 
+                      backgroundColor: getCompatibilityColor(candidate.avg_compatibility || 0),
+                      color: 'white'
+                    }}
+                  >
+                    {candidate.avg_compatibility || 0}% compatível
+                  </span>
+                </div>
+              )}
+
               <p className="date">
                 Cadastrado em: {new Date(candidate.created_at).toLocaleDateString('pt-BR')}
               </p>
