@@ -104,7 +104,7 @@ export default function Jobs() {
           
           <input
             type="text"
-            placeholder="Buscar por título ou empresa..."
+            placeholder="Buscar por título..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"

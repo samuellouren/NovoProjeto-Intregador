@@ -144,7 +144,7 @@ export default function AddJob() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="max_candidates">Limite de Candidatos *</label>
+                <label htmlFor="max_candidates">Limite de vagas</label>
                 <input
                   type="number"
                   id="max_candidates"
